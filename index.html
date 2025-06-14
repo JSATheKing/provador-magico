@@ -163,8 +163,9 @@
     </div>
 
     <script>
-        // Este será o nosso JavaScript. Por enquanto, ele está vazio,
-        // mas logo adicionaremos a lógica aqui!
+        // Seu link do back-end (ngrok) AQUI!
+        const BACKEND_URL = 'https://1030-35-104-98-23.ngrok-free.app'; 
+
         const userPhotoInput = document.getElementById('user-photo-input');
         const clothingPhotoInput = document.getElementById('clothing-photo-input');
         const userPhotoThumbnail = document.getElementById('user-photo-thumbnail');
@@ -177,7 +178,6 @@
         const downloadButton = document.getElementById('download-button');
         const newTryButton = document.getElementById('new-try-button');
 
-        // Função para pré-visualizar a imagem
         function previewImage(input, imgElement, thumbnailElement) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -194,7 +194,6 @@
             }
         }
 
-        // Função para verificar se os dois inputs estão preenchidos
         function checkInputs() {
             if (userPhotoInput.files.length > 0 && clothingPhotoInput.files.length > 0) {
                 tryOnButton.disabled = false;
@@ -203,26 +202,43 @@
             }
         }
 
-        // Event Listeners
         userPhotoInput.addEventListener('change', () => previewImage(userPhotoInput, userPhotoThumbnail, userPhotoThumbnail));
         clothingPhotoInput.addEventListener('change', () => previewImage(clothingPhotoInput, clothingPhotoThumbnail, clothingPhotoThumbnail));
 
         tryOnButton.addEventListener('click', async () => {
-            // Aqui no futuro chamaremos nossa API de IA
             loadingMessage.style.display = 'block';
             errorMessage.style.display = 'none';
             resultSection.style.display = 'none';
-            tryOnButton.disabled = true; // Desabilita o botão enquanto processa
+            tryOnButton.disabled = true; 
 
-            // Simulação de tempo de processamento (removeremos no futuro)
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            const formData = new FormData();
+            formData.append('user_photo', userPhotoInput.files[0]);
+            formData.append('clothing_photo', clothingPhotoInput.files[0]);
 
-            // Simulação de resultado (substituiremos pela imagem da IA)
-            resultImage.src = "https://via.placeholder.com/400x600?text=Sua+Roupa+Aqui!"; // Imagem de exemplo
-            resultSection.style.display = 'block';
+            try {
+                const response = await fetch(`${BACKEND_URL}/try-on`, {
+                    method: 'POST',
+                    body: formData,
+                });
 
-            loadingMessage.style.display = 'none';
-            tryOnButton.disabled = false; // Habilita novamente
+                if (response.ok) {
+                    const imageBlob = await response.blob();
+                    const imageUrl = URL.createObjectURL(imageBlob);
+                    resultImage.src = imageUrl;
+                    resultSection.style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = `Erro: ${errorData.error || 'Não foi possível processar as imagens.'}`;
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+                errorMessage.textContent = 'Erro de conexão com o servidor. Verifique o console do navegador e o Colab.';
+                errorMessage.style.display = 'block';
+            } finally {
+                loadingMessage.style.display = 'none';
+                tryOnButton.disabled = false; 
+            }
         });
 
         downloadButton.addEventListener('click', () => {
@@ -235,7 +251,6 @@
         });
 
         newTryButton.addEventListener('click', () => {
-            // Limpa os inputs e esconde as miniaturas
             userPhotoInput.value = '';
             clothingPhotoInput.value = '';
             userPhotoThumbnail.style.display = 'none';
@@ -243,12 +258,10 @@
             userPhotoThumbnail.src = '#';
             clothingPhotoThumbnail.src = '#';
 
-            // Esconde a seção de resultado e a mensagem de erro
             resultSection.style.display = 'none';
             errorMessage.style.display = 'none';
             loadingMessage.style.display = 'none';
 
-            // Desabilita o botão "Experimentar!"
             tryOnButton.disabled = true;
         });
     </script>
